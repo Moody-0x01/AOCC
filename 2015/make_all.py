@@ -4,10 +4,22 @@ from os import scandir, system
 
 CC="gcc"
 CXX="g++"
-# CFLAGS="-Wall -Wextra -pedantic -Werror -ggdb"
-CFLAGS="-Wno-deprecated  -ggdb"
+CFLAGS="-Wall -Wextra -pedantic -Werror -ggdb"
+CXXFLAGS="-Wall -Wextra -pedantic -Werror -std=c++20 -ggdb"
+# CFLAGS="-Wno-deprecated  -ggdb"
 cpp = 0
 c   = 0
+
+def execute_command(command) -> None:
+    code = system(command)
+    if code & 0xf7:
+        print("[CMD-ABORTED-BY-SIGNAL] ", command)
+        exit(code);
+    code = (code & 0xff00) >> 8
+    if code != 0:
+        print("[CMD-FAILED] ", command)
+        exit(code)
+
 def main():
     print("[*] Making the bin directory.")
     system("mkdir -p bin")
@@ -25,10 +37,10 @@ def main():
             if name == "07.c":
                 lib = "./hashtable/HashTable.c"
             if cpp:
-                command = f"{CXX} {CFLAGS} -o {out} {name} {lib}"
+                command = f"{CXX} {CXXFLAGS} -o {out} {name} {lib}"
             else:
                 command = f"{CC} {CFLAGS} -o {out} {name} {lib}"
             print(f"[BUILDING] {name} -> {out}")
             print(f"[CMD] {command}")
-            system(command)
+            execute_command(command)
 main()

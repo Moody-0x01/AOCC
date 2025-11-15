@@ -29,7 +29,7 @@ If your secret key is pqrstuv, the lowest number it combines with to make an MD5
 
 int is_base_valid(char *base)
 {
-  int	i;
+	int	i;
 	int	j;
 
 	i = 0;
@@ -47,54 +47,54 @@ int is_base_valid(char *base)
 
 int digit_length_base(long num, int base)
 {
-  int n = 0;
-  if (num < 0)
-  {
-    num = -num;
-    n++;
-  }
-  if (num == 0)
-    return (1);
+	int n = 0;
+	if (num < 0)
+	{
+		num = -num;
+		n++;
+	}
+	if (num == 0)
+		return (1);
 
-  while (num >= 0)
-  {
-    if (num == 0)
-      return (n);
-    num /= base;
-    n++;
-  }
-  return (n);
+	while (num >= 0)
+	{
+		if (num == 0)
+			return (n);
+		num /= base;
+		n++;
+	}
+	return (n);
 }
 
 char  *np_itoa_base(int i, char *base)
 {
-  uint64_t num, blength;
-  char *asci;
-  int nsz;
+	uint64_t num, blength;
+	char *asci;
+	int nsz;
 
-  if (base == NULL)
-    base = BASE_10_ASCII;  
-  blength = is_base_valid(base);
-  if (blength < 2)
-    return strdup("");
-  if (i == 0)
-    return strdup("0");
-  num = i;
-  nsz = digit_length_base(num, blength);
-  if (i < 0)
-    num = -num;
-  asci = malloc(nsz + 1);
-  asci[nsz--] = 0;
-  while (num > 0) {
-    if (num == 0)
-      break;
-    asci[nsz--] = 
-      base[(num % blength)];
-    num /= blength;
-  }
-  if (i < 0)
-    asci[nsz] = '-';
-  return (asci);
+	if (base == NULL)
+		base = BASE_10_ASCII;  
+	blength = is_base_valid(base);
+	if (blength < 2)
+		return strdup("");
+	if (i == 0)
+		return strdup("0");
+	num = i;
+	nsz = digit_length_base(num, blength);
+	if (i < 0)
+		num = -num;
+	asci = malloc(nsz + 1);
+	asci[nsz--] = 0;
+	while (num > 0) {
+		if (num == 0)
+			break;
+		asci[nsz--] = 
+			base[(num % blength)];
+		num /= blength;
+	}
+	if (i < 0)
+		asci[nsz] = '-';
+	return (asci);
 }
 typedef union uwb {
 	unsigned w;
@@ -215,10 +215,10 @@ unsigned* Algorithms_Hash_MD5(const char *msg, int mlen)
 char* GetMD5String(const char *msg, int mlen) {
 	char *str = (char *)malloc(40);
 	strcpy(str, "");
-	int j, k;
-	unsigned *d = Algorithms_Hash_MD5(msg, strlen(msg));
+	int j;
+	unsigned *d = Algorithms_Hash_MD5(msg, mlen);
 	MD5union u;
-  char* s = (char *)malloc(8 * sizeof(char));
+	char* s = (char *)malloc(8 * sizeof(char));
 
 	for (j = 0; j<4; j++) {
 		u.w = d[j];
@@ -226,7 +226,7 @@ char* GetMD5String(const char *msg, int mlen) {
 		sprintf(s, "%02x%02x%02x%02x", u.b[0], u.b[1], u.b[2], u.b[3]);
 		strcat(str, s);
 	}
-  free(s);
+	free(s);
 	return str;
 }
 // #define FIVE_ZEROS 5
@@ -234,62 +234,62 @@ char* GetMD5String(const char *msg, int mlen) {
 
 int main(int argc, char **argv)
 {
-  
-  if (argc < 2) {
-    fprintf(stderr, "An input file was not given.\n");
-    return (1);
-  }
-  FILE *fp = fopen(argv[1], "r");
-  
-  if (!fp) {
-    fprintf(stderr, "Could not open `%s` for reading.\n", argv[1]);
-    return (1);
-  }
 
-  char *last_addr;
-  unsigned long number = 0;
-  char *num_ascii = NULL;
-  ssize_t nread = 1;
-  size_t n = 0;
-  char *Line = NULL;
-  
-  while (1) {
-    nread = getline(&Line, &n, fp);
-    if (nread <= 0)
-      break;
-    Line[nread-1] = 0;
-    
-    while (1) {
-     
-      num_ascii = np_itoa_base(number, NULL); // NULL FOR BASE 10
-      last_addr = Line + nread - 1;
-      Line = strcat(Line, num_ascii);
-      char *r = GetMD5String(Line, nread-1);
-      printf("STRING: %s\n", Line);
-      printf("MD5: %s\n", r); 
+	if (argc < 2) {
+		fprintf(stderr, "An input file was not given.\n");
+		return (1);
+	}
+	FILE *fp = fopen(argv[1], "r");
+
+	if (!fp) {
+		fprintf(stderr, "Could not open `%s` for reading.\n", argv[1]);
+		return (1);
+	}
+
+	char *last_addr;
+	unsigned long number = 0;
+	char *num_ascii = NULL;
+	ssize_t nread = 1;
+	size_t n = 0;
+	char *Line = NULL;
+
+	while (1) {
+		nread = getline(&Line, &n, fp);
+		if (nread <= 0)
+			break;
+		Line[nread-1] = 0;
+
+		while (1) {
+
+			num_ascii = np_itoa_base(number, NULL); // NULL FOR BASE 10
+			last_addr = Line + nread - 1;
+			Line = strcat(Line, num_ascii);
+			char *r = GetMD5String(Line, nread-1);
+			printf("STRING: %s\n", Line);
+			printf("MD5: %s\n", r); 
 #ifdef SIX_ZEROS
-      if (strncmp(r, "000000", 6) == 0) {
-        printf("FOUND: %s\n", Line);
-        printf("HASH: %s\n", r);
-        free(r);
-        break;
-      }
+			if (strncmp(r, "000000", 6) == 0) {
+				printf("FOUND: %s\n", Line);
+				printf("HASH: %s\n", r);
+				free(r);
+				break;
+			}
 #else
-      if (strncmp(r, "00000", 5) == 0) {
-        printf("FOUND: %s\n", Line);
-        printf("HASH: %s\n", r);
-        free(r);
-        break;
-      }
+			if (strncmp(r, "00000", 5) == 0) {
+				printf("FOUND: %s\n", Line);
+				printf("HASH: %s\n", r);
+				free(r);
+				break;
+			}
 #endif /* ifdef SIX_ZEROS  */ 
-      *last_addr = 0;
-      number++;
-      free(r);
-      // sleep(1);
-    }
-    free(Line);
-    Line = NULL;
-  }
-  // printf("visited_houses_: %zu\n", FinalM.size());
-  return (0);
+			*last_addr = 0;
+			number++;
+			free(r);
+			// sleep(1);
+		}
+		free(Line);
+		Line = NULL;
+	}
+	// printf("visited_houses_: %zu\n", FinalM.size());
+	return (0);
 }

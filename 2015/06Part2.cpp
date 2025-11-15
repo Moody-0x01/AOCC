@@ -38,11 +38,12 @@ typedef enum kind_e {
   TURN_OFF
 } Kind;
 
-const static char *action_strs[] = {
-  "turn",
-  "turn on",
-  "turn off",
-};
+// const static char *action_strs[] = {
+//   "turn",
+//   "turn on",
+//   "turn off",
+// };
+
 typedef struct vec2_s {
   int x, y;
 } vec2;
@@ -140,10 +141,8 @@ int main(int argc, char **argv)
     tok++;
     // Where we reached.
     chord_vec = split(*tok, ",");
-    ins.start = (vec2){
-      .x = atoi(chord_vec[0]),
-      .y = atoi(chord_vec[1])
-    };
+    ins.start.x = atoi(chord_vec[0]);
+    ins.start.y = atoi(chord_vec[1]);
 
     tok++;
     assert(strcmp(*tok, "through") == 0 && "Expected a thro here!!");
@@ -151,10 +150,8 @@ int main(int argc, char **argv)
     free_split_result(chord_vec);
 
     chord_vec = split(*tok, ",");
-    ins.end = (vec2){
-      .x = atoi(chord_vec[0]),
-      .y = atoi(chord_vec[1])
-    };
+    ins.end.x = atoi(chord_vec[0]);
+    ins.end .y = atoi(chord_vec[1]);
     // printf("The parsed action tell me to %s all bulbs from loc (%i, %i) thro (%i, %i)\n", action_strs[ins.kind], 
     //     ins.start.x, ins.start.y, ins.end.x, ins.end.y);
     // TODO: Cleanup ur messss..

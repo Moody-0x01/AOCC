@@ -81,7 +81,7 @@ char **split(char *s, const char *delim)
 }
 #define MAX_INST 1024 * 60
 bool isvalidhexdigit(char a) {
-  return ((a >= 'a') && (a <= 'f') || (a >= '0') && (a <= '9'));
+  return (((a >= 'a') && (a <= 'f')) || ((a >= '0') && (a <= '9')));
 }
 bool is_byte(char a, char b)
 {

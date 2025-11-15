@@ -28,51 +28,51 @@ Your task is to find the total number of characters to represent the newly encod
 #include <string.h>
 int main(int argc, char **argv)
 {
-  if (argc < 2) {
-    fprintf(stderr, "An input file was not given.\n");
-    return (1);
-  }
-  FILE *fp = fopen(argv[1], "r");
-  
-  if (!fp) {
-    fprintf(stderr, "Could not open `%s` for reading.\n", argv[1]);
-    return (1);
-  }
-  
-  ssize_t nread = 1;
-  size_t n = 0;
-  char *Line = NULL;  
-  size_t code_size = 0; 
-  size_t encoded_size = 0; 
-  while (1) {
-    nread = getline(&Line, &n, fp);
-    if (nread <= 0)
-      break;
-    if (nread-1 == 0) {
-      free(Line);
-      continue;
-    }
-    Line[nread-1] = 0;
-    printf("%s\n", Line);
-    code_size += nread - 1;
+	if (argc < 2) {
+		fprintf(stderr, "An input file was not given.\n");
+		return (1);
+	}
+	FILE *fp = fopen(argv[1], "r");
 
-    for (int i = 0; i < nread - 1; i++) {
-      switch (Line[i]) {
-        case '\\':
-        case '\'':
-        case '"': {
-          encoded_size += 2;
-        } break;
-        default: {
-          encoded_size++;
-        } break;
-      }
-    }
+	if (!fp) {
+		fprintf(stderr, "Could not open `%s` for reading.\n", argv[1]);
+		return (1);
+	}
 
-    encoded_size+=2; // adding ""
-    free(Line);
-    Line = NULL;
-  }
-  printf("answer: %zu\n", encoded_size - code_size);
-  return (0);
+	ssize_t nread = 1;
+	size_t n = 0;
+	char *Line = NULL;  
+	size_t code_size = 0; 
+	size_t encoded_size = 0; 
+	while (1) {
+		nread = getline(&Line, &n, fp);
+		if (nread <= 0)
+			break;
+		if (nread-1 == 0) {
+			free(Line);
+			continue;
+		}
+		Line[nread-1] = 0;
+		printf("%s\n", Line);
+		code_size += nread - 1;
+
+		for (int i = 0; i < nread - 1; i++) {
+			switch (Line[i]) {
+				case '\\':
+				case '\'':
+				case '"': {
+					encoded_size += 2;
+				} break;
+				default: {
+					encoded_size++;
+				} break;
+			}
+		}
+
+		encoded_size+=2; // adding ""
+		free(Line);
+		Line = NULL;
+	}
+	printf("answer: %zu\n", encoded_size - code_size);
+	return (0);
 }
