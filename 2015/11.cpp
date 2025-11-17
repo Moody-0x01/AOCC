@@ -24,13 +24,26 @@ For example:
 
 Given Santa's current password (your puzzle input), what should his next password be?
 */
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <cstdio>
 #include <iostream>
 #include <stdlib.h>
+#include <string>
 #include <utility>
 
+bool ill(char c)
+{
+	switch (c)
+	{
+		case 'o': { return (true);};
+		case 'i': { return (true);};
+		case 'l': { return (true);};
+		default: {};
+	}
+	return (false);
+}
 
 bool is_valid(std::string password)
 {
@@ -50,6 +63,7 @@ bool is_valid(std::string password)
 
 		first = password[k];
 		second = password[k+1];
+		if (ill(second) || ill(first)) return (false);
 		if (first == second)
 		{
 			k+=2;
@@ -57,12 +71,7 @@ bool is_valid(std::string password)
 		}
 		else
 			k++;
-		if (pair_count == 2)
-			break ;
 	}
-	std::cout << "Pairs: " << pair_count << std::endl;
-
-	// TODO: Check for has_straight??
 	for (size_t k = 0; k < password.size() - 2;++k)
 	{
 		char one, two, three;
@@ -80,32 +89,36 @@ bool is_valid(std::string password)
 
 std::string GetNew(std::string Old)
 {
-	std::string New = Old;
 	bool wrapped = true;
+	std::string New = Old;
 
-	while (wrapped)
+	std::reverse(New.begin(),
+			  New.end());
+	std::cout << "Inid with: " << New << " From: " << Old << std::endl;
+	// getc(stdin);
+	for (size_t i = 0; i < New.size(); i++)
 	{
-		for (size_t i = 0; i < New.size(); )
+		if (wrapped)
 		{
-			if (New[i] == 'z')
-			{
-				New[i] = 'a';
-				wrapped = true;
-				break ;
-			}
+			if (New[i] == 'z') New[i] = 'a';
 			else {
-				New[i++]++;
-				if (i < New.size() && (New[i] == 'i' || New[i] == 'l' || New[i] == 'o')) New[i]++;
+				New[i]++;
 				wrapped = false;
-			}
+			};
 		}
 	}
+	std::reverse(New.begin(), New.end());
 	return (New);
 }
 
-int main()
+int main(int ac, char **av)
 {
-	// std::cout << GetNew("zzzzzzzz") << std::endl;
-	std::cout << is_valid("abcdffax") << "\n";
+	if (ac < 2)
+		return (1);
+	{
+		std::string New = GetNew(av[1]);
+		while (!is_valid(New)) New = GetNew(New);
+		std::cout << "New :: " << New << std::endl;
+	}
 	return (0);
 }
