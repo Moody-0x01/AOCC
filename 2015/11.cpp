@@ -31,100 +31,81 @@ Given Santa's current password (your puzzle input), what should his next passwor
 #include <stdlib.h>
 #include <utility>
 
-static bool contains(std::string haystack, std::string needle)
-{
-	for (size_t j = 0; j < needle.size();j++)
-		if (haystack.find(needle[j]) != std::string::npos) return (true);
-	return (false);
-}
 
-static bool contains_seq(std::string string)
+bool is_valid(std::string password)
 {
-	for (size_t k = 0; k < string.size(); ++k)
+	// Passwords must include one increasing straight 
+	// of at least three letters, like abc, bcd, cde, 
+	// and so on, up to xyz. They cannot skip letters; abd doesn't count.
+	bool has_straight = false;
+	// Passwords must contain at least two different, 
+	// `non-overlapping` pairs of letters, like aa, bb, or zz
+	int pair_count = 0;
+	assert(password.size() >= 8 && "Not allowed!");
+
+	// TODO: Check for pairs??
+	for (size_t k = 0; k < password.size() - 1;)
 	{
-		for (size_t p = k; p < string.size() - 2; ++p)
-		{
-			if (string[p]+1 == string[p+1] && string[p+1]+1 == string[p+2]) return (true);
-		}
-}
-	return (false);
-}
+		char first, second;
 
-static bool contains_pairs(std::string string)
-{
-	int pairs;
-
-	pairs = 0;
-	for (size_t k = 0; k < string.size()-1;)
-	{
-		if (string[k] == string[k+1])
+		first = password[k];
+		second = password[k+1];
+		if (first == second)
 		{
-			pairs++;
 			k+=2;
+			pair_count++;
 		}
 		else
 			k++;
+		if (pair_count == 2)
+			break ;
 	}
-	std::cout << pairs << std::endl;
-	return (pairs >= 2);
+	std::cout << "Pairs: " << pair_count << std::endl;
+
+	// TODO: Check for has_straight??
+	for (size_t k = 0; k < password.size() - 2;++k)
+	{
+		char one, two, three;
+		one = password[k];
+		two = password[k+1];
+		three = password[k+2];
+		if (one + 1 == two && two + 1 == three)
+		{
+			has_straight = true;
+			break ;
+		}
+	}
+	return (pair_count == 2 && has_straight);
 }
 
-void increment(std::string &New)
+std::string GetNew(std::string Old)
 {
-	bool valid = false;
-	while (true)
+	std::string New = Old;
+	bool wrapped = true;
+
+	while (wrapped)
 	{
-		for (size_t i = 0; i < New.size(); ++i)
+		for (size_t i = 0; i < New.size(); )
 		{
-			New[i]++;
 			if (New[i] == 'z')
 			{
 				New[i] = 'a';
-				continue ;
+				wrapped = true;
+				break ;
 			}
-			valid = !contains(New, "iol");
-			valid = valid && contains_seq(New);
-			valid = valid && contains_pairs(New);
-			if (valid) return ;
+			else {
+				New[i++]++;
+				if (i < New.size() && (New[i] == 'i' || New[i] == 'l' || New[i] == 'o')) New[i]++;
+				wrapped = false;
+			}
 		}
-		return ;
-	}
-}
-
-std::string next(std::string previous)
-{
-	// TODO: Generate the next password
-	//     RULE1: Passwords may not contain the letters i, o, or l
-	//     DONE
-	//     RULE2: should contain one stright seq like abc, bcd
-	//     RULE3: should contain two pairs bb zz abcdffaa	
-	std::string New;
-	bool valid = false;
-
-	New = previous;
-	while (!valid)
-	{
-		std::cout << "Not Valid: " <<  New << "\n";
-		increment(New);
-		valid = !contains(New, "iol");
-		valid = valid && contains_seq(New);
-		valid = valid && contains_pairs(New);
 	}
 	return (New);
 }
 
-std::string _next(std::string previous)
-{
-	std::string New;
-
-	New = previous;
-}
-
 int main()
 {
-	std::cout << "Valid: " << next("vzbxkghb") << "\n";
-	// assert(contains_seq("abcd") && "Fail??");
-	// assert(!contains("abcd", "iol") && "Fail??");
-	// assert(contains_pairs("abcaddccxx") && "Fail??");
+	// std::cout << GetNew("zzzzzzzz") << std::endl;
+	std::cout << is_valid("abcdffax") << "\n";
 	return (0);
 }

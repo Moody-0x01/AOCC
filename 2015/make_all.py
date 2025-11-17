@@ -1,6 +1,7 @@
 #!/bin/python3
 
 from os import scandir, system
+from sys import argv
 
 CC="gcc"
 CXX="g++"
@@ -20,7 +21,7 @@ def execute_command(command) -> None:
         print("[CMD-FAILED] ", command)
         exit(code)
 
-def main():
+def compile_all():
     print("[*] Making the bin directory.")
     system("mkdir -p bin")
     dir = scandir('.')
@@ -43,4 +44,15 @@ def main():
             print(f"[BUILDING] {name} -> {out}")
             print(f"[CMD] {command}")
             execute_command(command)
+def clean_all(): system("rm -rf ./bin/")
+def main():
+    subcommand = ""
+    if len(argv) > 1: subcommand = argv[1]
+    if subcommand == "":
+        compile_all()
+    elif subcommand == "re":
+        clean_all()
+        compile_all()
+    elif subcommand == "clean":
+        clean_all()
 main()
