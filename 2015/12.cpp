@@ -16,9 +16,6 @@ You will not encounter any strings containing numbers.
 
 What is the sum of all numbers in the document?
 */
-// #include <algorithm>
-// #include <string>
-// #include <utility>
 #include <cassert>
 #include <cctype>
 #include <cstddef>
@@ -27,9 +24,8 @@ What is the sum of all numbers in the document?
 #include <iostream>
 #include <stdlib.h>
 #include <string>
+#include <vector>
 
-// Part two..
-// WIP
 typedef struct Token {
 public:
 	typedef enum Kind {
@@ -38,30 +34,115 @@ public:
 		Other,
 		END
 	} Kind;
+
+	char other;
 	std::string str;
 	long num;
 	Kind kind;
+
+	/* constructors */
 	Token(long N) : num(N), kind(Number) {}
 	Token(std::string s) : str(s), kind(String) {}
-	Token() : kind(Other) {}
+	Token(char c) : other(c), kind(Other) {}
 	Token(size_t end) : num(end), kind(END) {}
+
+	/* Copy */
+	Token &operator=(const Token &Other)
+	{
+		if (this != &Other)
+		{
+			this->kind = Other.kind;
+			this->num = Other.num;
+			this->str = Other.str;
+			this->other = Other.other;
+		}
+		return (*this);
+	}
+
+	Token(const Token &Other)
+	{
+		if (this == &Other)
+			return ;
+		this->kind = Other.kind;
+		this->num = Other.num;
+		this->str = Other.str;
+		this->other = Other.other;
+	}
 } Token;
+Token Next(std::string data);
 
-class Json {
-
+class Lexer {
+private:
+	std::vector<Token> tokens;
+	size_t cursor;
 public:
-	Json *table_value;
-	long number_value;
-	std::string string_value;
+	Lexer(std::string data): cursor(0)
+	{
+		Token current = Next(data);
+		while (current.kind != Token::END)
+		{
+			this->tokens.push_back(current);
+			current = Next(data);
+		}
+		this->tokens.push_back(current);
+		std::cout << "Lexer: Got " << this->tokens.size() << " tokens from data\n";
+	}
+	Token peek()
+	{
+		return (this->tokens[this->cursor]);
+	}
+	void advance()
+	{
+		if (this->cursor < this->tokens.size()) this->cursor++;
+	}
+	~Lexer()
+	{}
+};
+
+typedef struct object {
+public:
+	/* Types that the parser implements */
 	typedef enum Kind {
 		Table,
 		Number,
 		String,
-		List
+		Array,
+		Neither
 	} Kind;
-};
+	Kind kind;
 
-static Token Next(std::string data)
+	/* The underlying types that can be recursively parsed */
+	typedef struct table_s {
+		std::string Key;
+		object *Value;
+	} table_t;
+
+	std::vector<object*> array;
+	table_t table;
+	std::string string;
+	long number;
+	object() : kind(Neither) {};
+	~object() {
+		/* recursively delete all the dangling data.. */
+		/* TODO: Delete the Arrays and Tables?? */
+		switch (this->kind)
+		{
+			case Neither: {} break;
+			case String: {} break;
+			case Table: {
+				if (this->table.Value) delete this->table.Value;
+			} break;
+			case Array: {
+				for (size_t x = 0; x < this->array.size(); ++x) delete this->array[x];
+			} break;
+			case Number: {} break;
+			default:{} break;
+		}
+	};
+} object;
+
+
+Token Next(std::string data)
 {
 	static size_t cursor;
 	std::string token;
@@ -85,42 +166,31 @@ static Token Next(std::string data)
 			while (cursor < data.size() && isalnum(data[cursor]))
 				token.push_back(data[cursor++]);
 		} else {
-			std::cout << "Jump: " << data[cursor] << std::endl;
-			cursor++;
-			return (Token());
+			return (Token(data[cursor++]));
 		}
 		return (Token(token));
 	}
-	cursor++;
-	return (Token());
+	return (Token(data[cursor++]));
 }
 
-long GetSum(std::string data)
+object *Parse_Object(Lexer &lexer)
 {
-	Token Tk = Next(data);
-	long sum = 0;
+	/* Top level function to parse an object while , is the next token*/
+	/* can I parse also arrays???*/
+	object *obj;
 
-	while (Tk.kind != Token::END)
-	{
-		// switch (Tk.kind)
-		// {
-		// 	case Token::Number: {
-		// 		std::cout << "NuM?: " << Tk.num << std::endl;
-		// 		sum+=Tk.num;
-		// 	} break;
-		// 	case Token::String: {
-		// 		std::cout << "String?: " << Tk.str << std::endl;
-		// 	} break;
-		// 	case Token::END: {
-		// 		std::cout << "END" << std::endl;
-		// 	} break;
-		// 	default: {
-		// 		std::cout << "Other" << std::endl;
-		// 	}
-		// }
-		Tk = Next(data);
-	}
-	return (sum);
+	obj = new object();
+	Token next = lexer.peek();
+	assert(next.kind == Token::Other
+		&& next.other == '{'
+		&& "Found an object but does not start with {!!");
+	lexer.advance();
+	do {
+		next = lexer.peek();
+		switch ()
+		{}
+	} while (next.kind != Token::END);
+	return(obj);
 }
 
 int main(int ac, char **av)
@@ -128,6 +198,7 @@ int main(int ac, char **av)
 	size_t n = 0;
 	ssize_t nread = 1;
 	char *Line = NULL;  
+	object *obj;
 	if (ac == 1)
 		return 0;
 	FILE *fp = fopen(av[1], "r");
@@ -135,8 +206,11 @@ int main(int ac, char **av)
 	if (!fp) return (1);
 	nread = getline(&Line, &n, fp);
 	if (nread == -1) return (1);
-	// std::cout << Line;
-	std::cout << "Answer: " << GetSum(Line) << std::endl;
+	Lexer lex(Line);
+	obj = Parse_Object(lex);
+	std::cout << std::hex << "Ptr: "  << obj;
+	delete obj;
 	free(Line);
-	return (0);
+	fclose(fp);
+	reurn (0);
 }
