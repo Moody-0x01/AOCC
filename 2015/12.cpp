@@ -188,7 +188,8 @@ object *Parse_Object(Lexer &lexer)
 	do {
 		next = lexer.peek();
 		switch ()
-		{}
+		{
+		}
 	} while (next.kind != Token::END);
 	return(obj);
 }
