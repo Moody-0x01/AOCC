@@ -17,6 +17,7 @@ You will not encounter any strings containing numbers.
 What is the sum of all numbers in the document?
 */
 #include <iterator>
+#include <utility>
 #include <algorithm>
 #include <cstring>
 #include <iomanip>
@@ -24,6 +25,7 @@ What is the sum of all numbers in the document?
 #include <cctype>
 #include <cstddef>
 #include <limits.h>
+#include <map>
 #include <ostream>
 #include <set>
 #include <sstream>
@@ -32,6 +34,7 @@ What is the sum of all numbers in the document?
 #include <iostream>
 #include <stdlib.h>
 #include <string>
+#include <utility>
 #include <vector>
 #include <string.h>
 
@@ -41,10 +44,6 @@ typedef struct Condition {
 	std::string who;
 } Condition;
 
-typedef struct Person {
-	std::string name;
-	Condition condition;
-} Person;
 
 std::vector<std::string> split(std::string s)
 {
@@ -59,7 +58,7 @@ std::vector<std::string> split(std::string s)
 	}
 	return (vec);
 }
-
+typedef std::map<std::pair<std::string, std::string>, int> ptable_t;
 typedef std::vector<std::vector<std::string> > t_permutations;
 t_permutations __permutations(std::vector<std::string> entries)
 {
@@ -87,33 +86,43 @@ t_permutations __permutations(std::vector<std::string> entries)
 	return (res);
 }
 
-int get_happiness(std::vector<std::string> perm, std::vector<Person> &people)
+int get_happiness(std::vector<std::string> perm, ptable_t &hash)
 {
 	int h = 0;
+	ptable_t::iterator it;
+	std::string left, right, mid;
+	left = perm[perm.size() - 1];
+	mid = perm[0];
+	right = perm[1];
 
-	for (size_t i = 0; i < perm.size(); ++i)
+	it = hash.find(std::make_pair(mid, left));
+	if (it != hash.end())
+		h += it->second;
+	it = hash.find(std::make_pair(mid, right));
+	if (it != hash.end())
+		h += it->second;
+	for (size_t i = 1; i < perm.size()-1; ++i)
 	{
-		std::string left, right, mid;
-
+		left = perm[i - 1];
 		mid = perm[i];
-		if (i == 0)
-			left = perm[perm.size() - 1];
-		else
-			left = perm[i - 1];
-		if (i == perm.size() - 1)
-			right = perm[0];
-		else
-			right = perm[i + 1];
-		for (size_t j = 0; j < people.size(); ++j)
-		{
-			if (people[j].name == mid)
-			{
-				if (people[j].condition.who == left || people[j].condition.who == right)
-					h += people[j].condition.q;
-				break;
-			}
-		}
+		right = perm[i + 1];
+			
+		it = hash.find(std::make_pair(mid, left));
+		if (it != hash.end())
+			h += it->second;
+		it = hash.find(std::make_pair(mid, right));
+		if (it != hash.end())
+			h += it->second;
 	}
+	left = perm[0];
+	mid = perm[perm.size() - 1];
+	right = perm[perm.size() - 2];
+	it = hash.find(std::make_pair(mid, left));
+	if (it != hash.end())
+		h += it->second;
+	it = hash.find(std::make_pair(mid, right));
+	if (it != hash.end())
+		h += it->second;
 	return (h);
 }
 
@@ -127,7 +136,8 @@ int main(int ac, char **av)
 	FILE *fp = fopen(av[1], "r");
 
 	if (!fp) return (1);
-	std::vector<Person> people;
+	/*  std::vector<Person> people;  */
+	ptable_t hash;
 	std::set<std::string> people_set;
 	while (1)
 	{
@@ -144,19 +154,13 @@ int main(int ac, char **av)
 		std::string name = fs[0];
 		std::string state = fs[2];
 		std::string effect = fs[3];
-		std::string who = fs[10];
-		Person p;
-		p.name = name;
-		p.condition.who = who.erase(who.size()-2, 2);
+		std::string who = fs[10].erase(fs[10].size() - 2, 2);
+		std::pair<std::string, std::string> p = std::make_pair(name, who);
+
 		if (state == "gain")
-			p.condition.q = std::atoi(effect.c_str());
+			hash.insert({p, std::atoi(effect.c_str())});
 		else if (state == "lose")
-			p.condition.q = -std::atoi(effect.c_str());
-		else {
-			std::cout << "What: " << state << "\n";
-			assert(0 && "Invalid state!!");
-		}
-		people.push_back(p);
+			hash.insert({p, -1 * std::atoi(effect.c_str())});
 		people_set.insert(name);
 	}
 	if (Line)
@@ -165,6 +169,10 @@ int main(int ac, char **av)
 		Line = NULL;
 	}
 
+	/*  for (auto &p: hash)  */
+	/*  {  */
+	/*  	std::cout << p.second << "\n";  */
+	/*  }  */
 	std::string first = std::prev(people_set.end())->c_str();
 	people_set.erase(first);
 	std::vector<std::string> entries(people_set.begin(), people_set.end());
@@ -175,7 +183,7 @@ int main(int ac, char **av)
 	for (size_t i = 0; i < perms.size(); i++)
 	{
 		perms[i].push_back(first);
-		int new_ = get_happiness(perms[i], people);
+		int new_ = get_happiness(perms[i], hash);
 		std::cout << "[";
 			std::for_each(perms[i].begin(),  perms[i].end(), [](std::string &name){
 				std::cout << name;
