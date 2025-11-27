@@ -218,11 +218,11 @@ char* GetMD5String(const char *msg, int mlen) {
 	int j;
 	unsigned *d = Algorithms_Hash_MD5(msg, mlen);
 	MD5union u;
-	char* s = (char *)malloc(8 * sizeof(char));
+	char* s = (char *)malloc(100 * sizeof(char));
 
 	for (j = 0; j<4; j++) {
 		u.w = d[j];
-		memset(s, 0, 8);
+		memset(s, 0, 100);
 		sprintf(s, "%02x%02x%02x%02x", u.b[0], u.b[1], u.b[2], u.b[3]);
 		strcat(str, s);
 	}

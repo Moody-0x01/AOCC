@@ -16,9 +16,12 @@ You will not encounter any strings containing numbers.
 
 What is the sum of all numbers in the document?
 */
+
+#include <iomanip>
 #include <cassert>
 #include <cctype>
 #include <cstddef>
+#include <sstream>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
@@ -29,6 +32,7 @@ What is the sum of all numbers in the document?
 typedef struct Token {
 public:
 	typedef enum Kind {
+		NoN = 0x0,
 		Number,
 		String,
 		Other,
@@ -40,7 +44,37 @@ public:
 	long num;
 	Kind kind;
 
+	std::string as_str() {
+		std::string final;
+		std::string strs[] = {
+		"NoN",
+		"Number",
+		"String",
+		"Other",
+		"END"
+		};
+		assert(this->kind <= END && "Invalid kind!");
+		final += strs[this->kind] + "\t";
+		switch (this->kind)
+		{
+			case NoN:
+			case END: {} break;
+			case Number: {
+				std::ostringstream convert;
+				convert << this->num;
+				final += convert.str();
+			} break;
+			case String: {
+				final += this->str;
+			} break;
+			case Other: {
+				final += this->other;
+			} break;
+		}
+		return (final);
+	}
 	/* constructors */
+	Token() : kind(NoN) {};
 	Token(long N) : num(N), kind(Number) {}
 	Token(std::string s) : str(s), kind(String) {}
 	Token(char c) : other(c), kind(Other) {}
@@ -91,16 +125,43 @@ public:
 	{
 		return (this->tokens[this->cursor]);
 	}
+	Token consume()
+	{
+		Token t = (this->tokens[this->cursor]);
+		if (this->cursor < this->tokens.size()) this->cursor++;
+		return (t);
+	}
 	void advance()
 	{
 		if (this->cursor < this->tokens.size()) this->cursor++;
 	}
 	~Lexer()
 	{}
+	inline void expect(Token::Kind kind, char val)
+	{
+		// std::cout << this->peek().as_str() << "\n";
+		assert(this->peek().kind == kind
+			&& (!val || val == this->peek().other)
+			&& "Expected : but found something else?");
+	}
+	bool skip_match(Token::Kind kind, char val)
+	{
+		this->expect(kind, val);
+		this->advance();
+		return (true);
+	}
 };
+
+void todo(const std::string desc)
+{
+	std::cout << "TODO@" << desc << "\n";
+	assert(0);
+}
 
 typedef struct object {
 public:
+	static int sum;
+	static int noredsum;
 	/* Types that the parser implements */
 	typedef enum Kind {
 		Table,
@@ -118,10 +179,114 @@ public:
 	} table_t;
 
 	std::vector<object*> array;
+	std::vector<table_t> tables;
 	table_t table;
 	std::string string;
 	long number;
 	object() : kind(Neither) {};
+
+	void print() {
+		/* log */
+		switch (this->kind)
+		{
+			case object::Number: {
+				std::cout << this->number;
+			} break;
+			case object::String: {
+				std::cout << this->string;
+			} break;
+			case object::Array: {
+				// todo("object::print::Array");
+				std::cout << "[ ";
+				for (size_t i = 0; i < this->array.size(); ++i)
+				{
+					this->array[i]->print();
+					if (i != this->array.size() - 1)
+						std::cout  << ", ";
+				}
+				std::cout << " ]";
+			} break;
+			case object::Table: {
+				std::cout << "{";
+				for (size_t i = 0; i < this->tables.size(); ++i)
+				{
+					std::cout << this->tables[i].Key << ": ";
+					this->tables[i].Value->print();
+					if (i != this->tables.size() - 1) std::cout  << ", ";
+				}
+				std::cout << "}";
+			} break;
+			case object::Neither: {
+				// return;
+				todo("object::print::Neither");
+			} break;
+		}
+	}
+	int sumall()
+	{
+		/* log */
+		int sum = 0;
+		switch (this->kind)
+		{
+			case object::Number: {
+				sum += this->number;
+			} break;
+			case object::String: {
+			} break;
+			case object::Array: {
+				// todo("object::print::Array");
+				for (size_t i = 0; i < this->array.size(); ++i)
+					sum+=this->array[i]->sumall();
+			} break;
+			case object::Table: {
+				for (size_t i = 0; i < this->tables.size(); ++i)
+					sum+=this->tables[i].Value->sumall();
+			} break;
+			case object::Neither: {
+				// return;
+				todo("object::print::Neither");
+			} break;
+		}
+		return (sum);
+	}
+	int sumnoread()
+	{
+		/* log */
+		int sum = 0;
+		// static bool red = false;
+		switch (this->kind)
+		{
+			case object::Number: {
+				sum += this->number;
+			} break;
+			case object::String: {
+				// if (this->string == "red")
+
+			} break;
+			case object::Array: {
+				for (size_t i = 0; i < this->array.size(); ++i) sum+=this->array[i]->sumnoread();
+			} break;
+			case object::Table: {
+				int accu = 0;
+				for (size_t i = 0; i < this->tables.size(); ++i)
+				{
+					accu+=this->tables[i].Value->sumnoread();
+					if (this->tables[i].Value->kind == object::String
+						&& this->tables[i].Value->string == "\"red\"")
+					{
+						accu = 0;
+						break;
+					}
+				}
+				sum+=accu;
+			} break;
+			case object::Neither: {
+				// return;
+				todo("object::print::Neither");
+			} break;
+		}
+		return (sum);
+	}
 	~object() {
 		/* recursively delete all the dangling data.. */
 		/* TODO: Delete the Arrays and Tables?? */
@@ -141,7 +306,8 @@ public:
 	};
 } object;
 
-
+int object::sum = 0;
+int object::noredsum = 0;
 Token Next(std::string data)
 {
 	static size_t cursor;
@@ -175,23 +341,90 @@ Token Next(std::string data)
 
 object *Parse_Object(Lexer &lexer)
 {
-	/* Top level function to parse an object while , is the next token*/
-	/* can I parse also arrays???*/
-	object *obj;
+	object *o;
+	o = new object();
 
-	obj = new object();
-	Token next = lexer.peek();
-	assert(next.kind == Token::Other
-		&& next.other == '{'
-		&& "Found an object but does not start with {!!");
-	lexer.advance();
-	do {
-		next = lexer.peek();
-		switch ()
+	for (Token t = lexer.peek(); t.kind != Token::END;lexer.advance(), t = lexer.peek())
+	{
+		switch (t.kind)
 		{
+		/* premitives first */
+			case Token::Number: {
+				o->kind = object::Number;
+				o->number = t.num;
+				lexer.advance();
+				return (o);
+			} break;
+			case Token::String: {
+
+				o->kind = object::String;
+				o->string = t.str;
+				lexer.advance();
+				return (o);
+			} break;
+		/* Complex types last */
+			case Token::Other: {
+				if (t.other == '{') 
+				/* Object */
+				{
+					// 1) Jump {
+					lexer.advance();
+					// 2) Expect key(string)
+					do {
+						lexer.expect(Token::String, 0);
+						o->kind = object::Table;
+						o->table.Key = lexer.consume().str; // Key token is gon
+						lexer.skip_match(Token::Other, ':');
+						o->table.Value = Parse_Object(lexer);
+						o->tables.push_back(o->table);
+						if (lexer.peek().kind != Token::Other
+							|| (lexer.peek().other != ','
+							&& lexer.peek().other != '}'))
+						{
+							std::cout << lexer.peek().as_str() << "\n";
+							assert(0 && "WTF!");
+						}
+						if (lexer.peek().other == '}')
+							break;
+					} while (lexer.skip_match(Token::Other, ','));
+					lexer.skip_match(Token::Other, '}');
+					return (o);
+				} else if (t.other == '[') 
+				/* Array */
+				{
+					// 1) Jump [
+					o->kind = object::Array;
+					lexer.advance();
+					do {
+						object *next = Parse_Object(lexer);
+						assert(next);
+						o->array.push_back(next);
+						/* Expect , for continuation and ] for blockage??? */
+						if (lexer.peek().kind != Token::Other || (lexer.peek().other != ',' && lexer.peek().other != ']'))
+						{
+							std::cout << lexer.peek().as_str() << "\n";
+							assert(0 && "WTF!");
+						}
+						if (lexer.peek().other == ']')
+						{
+							lexer.advance();
+							break;
+						}
+					} while (lexer.skip_match(Token::Other, ','));
+					return (o);
+				} else {
+					std::cout << t.as_str() << std::endl;
+					assert(0 && "This symbol is not expected!!");
+				}
+			} break;
+		/* END */
+			case Token::END: {} break;
+			case Token::NoN: {
+				assert(0 && "Unreachable code was reached???");
+			} break;
 		}
-	} while (next.kind != Token::END);
-	return(obj);
+	}
+	return (o);
 }
 
 int main(int ac, char **av)
@@ -209,9 +442,12 @@ int main(int ac, char **av)
 	if (nread == -1) return (1);
 	Lexer lex(Line);
 	obj = Parse_Object(lex);
-	std::cout << std::hex << "Ptr: "  << obj;
+	// std::cout << std::hex << "Ptr: "  << obj;
+	// obj->print();
+	std::cout << obj->sumall() << "\n";
+	std::cout << obj->sumnoread() << "\n";
 	delete obj;
 	free(Line);
 	fclose(fp);
-	reurn (0);
+	return (0);
 }
