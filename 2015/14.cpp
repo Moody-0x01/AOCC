@@ -36,6 +36,8 @@ Given the descriptions of each reindeer (in your puzzle input), after exactly 25
 #define SPEED  0
 #define FLY_DURATION  1
 #define REST_DURATION  2
+#define DISTANCE  3
+#define SCORE  4
 std::vector<std::string> split(std::string s)
 {
 	std::vector<std::string> vec;
@@ -113,7 +115,8 @@ int main(int ac, char **av)
 		v.push_back(speed);
 		v.push_back(fly_duration);
 		v.push_back(rest_duration);
-
+		v.push_back(0);
+		v.push_back(0);
 		reindeers.insert({name, v});
 	}
 	if (Line)
@@ -122,13 +125,43 @@ int main(int ac, char **av)
 		Line = NULL;
 	}
 	long max = INT_MIN;
+	/*  int race_duration = 1000; // 689  */
+	int race_duration = 2503; 
+	std::vector<std::string> names;
+
+	for (int sec = 1; sec <= race_duration; sec++)
+	{
+		std::string name;
+		int dist = 0;
+		max = 0;
+		for (auto &key: reindeers)
+		{
+			int stride = key.second[FLY_DURATION] + key.second[REST_DURATION];
+			/*  int stride_count = sec / stride;  */
+			/*  int rem = sec % stride;  */
+			/*  dist = (stride_count * key.second[SPEED] * key.second[FLY_DURATION]) + (key.second[SPEED] * std::min(rem, key.second[FLY_DURATION]));  */
+			int c = sec/stride;
+			int rem = sec % stride;
+			int rem_tr = std::min(rem, key.second[FLY_DURATION]);
+			dist = ((key.second[FLY_DURATION] * c)+rem_tr)*key.second[SPEED];
+			if (dist >= max)
+			{
+				max = dist;
+				name = key.first;
+			}
+		}
+		reindeers[name][SCORE]++;
+		sec++;
+	}
+	std::cout << "Max : "       << max << "\n";
+	max = INT_MIN;
 	for (auto &key: reindeers)
 	{
-		long ds = distance(2503, key.second);
-		max = std::max(ds, max);
-		std::cout << key.first << " Has traveled " << ds << " after 1000 seconds\n";
+		std::cout << key.first << " : " << key.second[SCORE] << "\n";
+		if (key.second[SCORE] > max)
+			max = key.second[SCORE];
 	}
-	std::cout << "Max : " << max << "\n";
+	std::cout << "Max points: " << max << "\n";
 	fclose(fp);
 	return (0);
 }
